@@ -9,8 +9,12 @@ import logging
 import gspread
 import sys
 
+
 def get_needed_data(worksheet):
-    '''Получает объект листа Google таблиц, из которого нужно получить данные. Возвращает кортеж из двух дат для выгрузки в формате строки. Первую считает как следующую за последней, которая уже есть в таблице с данными. Последнюю - вчера. Если период выгрузки отрицательный, генерирует SystemExit.'''
+    """Получает объект листа Google таблиц, из которого нужно получить данные.
+    Возвращает кортеж из двух дат для выгрузки в формате строки.
+    Первую считает как следующую за последней, которая уже есть в таблице с данными. Последнюю - вчера.
+    Если период выгрузки отрицательный, генерирует SystemExit."""
 
     values_list = worksheet.col_values(1)
     date1 = values_list[-1]
@@ -26,15 +30,17 @@ def get_needed_data(worksheet):
         dates = (date1, date2)
         return dates
 
+
 def import_data(api_request, params):
-    '''Получает данные из Yandex.Metrika API. Возвращает массив результатов'''
+    """Получает данные из Yandex.Metrika API. Возвращает массив результатов"""
     result = api_request.stats().get(params=params)
     result = result().data
     result = result[0]['data']
     return result
 
+
 def parse_json(result):
-    '''Парсит Json в list для Google Таблиц. Возвращает список списков для загрузки в Google Таблицы.'''
+    """Парсит Json в list для Google Таблиц. Возвращает список списков для загрузки в Google Таблицы."""
     values = []
     # headers = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign', 'visits', 'users', 'chatMessage', 'cartOrder']
     # values.append(headers)                              # Добавляем строку с заголовками
@@ -46,7 +52,8 @@ def parse_json(result):
             value.append(result[i]["metrics"][m])
         values.append(value)
     return values
-  
+
+
 def main():
     start_time = time.time()
 
@@ -65,7 +72,7 @@ def main():
     #Параметры запроса для библиотеки tapi_yandex_metrika
     api = YandexMetrikaStats(
         access_token=ACCESS_TOKEN, 
-        receive_all_data=True)                          # Если True, будет скачивать все части отчета. По умолчанию False.
+        receive_all_data=True)                     # Если True, будет скачивать все части отчета. По умолчанию False.
 
     params = dict(
         ids = METRIC_IDS,
@@ -84,6 +91,7 @@ def main():
     end_time = time.time()
     total_time = round((end_time - start_time), 3)
     logging.info(f'Total time: {total_time} s.')
+
 
 if __name__ == '__main__':
     main()
