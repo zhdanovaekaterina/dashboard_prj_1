@@ -43,7 +43,14 @@ def main():
                'cartOrder']
 
     result = import_metrika_data(api, params)
-    values = parse_metrika_json_tolist(result)
+
+    # Парсим массив данных в список списков для загрузки в Google таблицы
+    if dates[2]:
+        values = parse_metrika_json_tolist(result, headers)
+    else:
+        values = parse_metrika_json_tolist(result)
+
+    # Загружаем данные в Google таблицы
     worksheet.append_rows(values)
     
     end_time = time.time()

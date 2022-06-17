@@ -6,26 +6,36 @@ import json
 import requests
 from requests.exceptions import ConnectionError
 from time import sleep
+import csv
+import re
 
 
 def get_needed_data(worksheet):
     """Получает объект листа Google таблиц, из которого нужно получить данные.
-    Возвращает кортеж из двух дат для выгрузки в формате строки.
+    Возвращает кортеж из двух дат для выгрузки в формате строки и значение флага "Первая загрузка данных".
     Первую считает как следующую за последней, которая уже есть в таблице с данными. Последнюю - вчера.
-    Если все данные за вчера и ранее уже загружены, генерирует SystemExit."""
+    Если все данные за вчера и ранее уже загружены, генерирует SystemExit.
+    Если данных в таблице нет, просит ввести начало диапазона с клавиатуры."""
 
-    values_list = worksheet.col_values(1)
-    date1 = values_list[-1]
-    date1 = datetime.datetime.strptime(date1, '%Y-%m-%d').date()
-    date1 = date1 + timedelta(days=1)
-    date2 = date.today() - timedelta(days=1)       # вчера
+    try:
+        values_list = worksheet.col_values(1)
+        date1 = values_list[-1]
+        date1 = datetime.datetime.strptime(date1, '%Y-%m-%d').date()
+        date1 = date1 + timedelta(days=1)
+        is_first_data = False
+    except IndexError:
+        date1 = input('Введите дату, с которой необходимо начать сбор данных в формате YYYY-MM-DD: ')
+        date1 = datetime.datetime.strptime(date1, '%Y-%m-%d').date()
+        is_first_data = True
+
+    date2 = date.today() - timedelta(days=1)  # вчера
     date_diff = (date2 - date1).days
     if date_diff < 0:
         sys.exit('Нет новых данных для загрузки. Попробуйте завтра.')
     else:
         date1 = str(date1)
         date2 = str(date2)
-        dates = (date1, date2)
+        dates = (date1, date2, is_first_data)
         return dates
 
 
@@ -37,12 +47,13 @@ def import_metrika_data(api_request, params):
     return result
 
 
-def import_direkt_data(token, client_login, body):
-    """Получает данные из Директа.
+def import_direkt_data(token, client_login, dates: tuple, field_names: list):
+    """Получает данные из Директа. Возвращает массив данных отчета.
     Params -
     token: токен доступа;
     client_login: логин клиента;
-    body: тело запроса."""
+    dates: кортеж из дат начала и конца диапазона;
+    field_names: список необходимых полей для выгрузки."""
 
     reports_url = 'https://api.direct.yandex.com/json/v5/reports'
 
@@ -52,13 +63,29 @@ def import_direkt_data(token, client_login, body):
         "Authorization": "Bearer " + token,
         "Client-Login": client_login,
         "Accept-Language": "ru",
-        "processingMode": "auto",
+        "processingMode": "offline",
+        "returnMoneyInMicros": "false",
         "skipReportHeader": "true",
         "skipReportSummary": "true"
     }
 
     # Создание тела запроса
-    body = body
+    body = {
+        "params": {
+            "SelectionCriteria": {
+                "DateFrom": dates[0],
+                "DateTo": dates[1]
+            },
+            "FieldNames": field_names,
+            "ReportName": f"ОТЧЕТ{dates[0]}_{dates[1]}",
+            "ReportType": "CUSTOM_REPORT",
+            "DateRangeType": "CUSTOM_DATE",
+            "Format": "TSV",
+            "IncludeVAT": "YES",
+            "IncludeDiscount": "NO"
+        }
+    }
+
     body = json.dumps(body, indent=4)
 
     # --- Запуск цикла для выполнения запросов ---
@@ -77,7 +104,7 @@ def import_direkt_data(token, client_login, body):
             elif req.status_code == 200:
                 print("Отчет создан успешно")
                 print("RequestId: {}".format(req.headers.get("RequestId", False)))
-                print("Содержание отчета: \n{}".format(req.text))
+                return req.text
                 break
             elif req.status_code == 201:
                 print("Отчет успешно поставлен в очередь в режиме офлайн")
@@ -131,8 +158,8 @@ def parse_metrika_json_tolist(result, headers=None):
     """Парсит Json-ответ Метрики в list для Google Таблиц. Возвращает список списков для загрузки в Google Таблицы."""
     values = []
     if headers is not None:
-        values.append(headers)                              # Добавляем строку с заголовками, если она передана
-    for i in range(len(result)-1):
+        values.append(headers)  # Добавляем строку с заголовками, если она передана
+    for i in range(len(result) - 1):
         value = []
         for k in range(len(result[i]["dimensions"])):
             value.append(result[i]["dimensions"][k]["name"])
@@ -140,6 +167,18 @@ def parse_metrika_json_tolist(result, headers=None):
             value.append(result[i]["metrics"][m])
         values.append(value)
     return values
+
+
+def parse_direkt_tsv_tolist(result, headers=None):
+    """Парсит TSV-ответ Директа в list для Google Таблиц. Возвращает список списков для загрузки в Google Таблицы."""
+    values = result.split('\n')
+    values_new = []
+    for i in range(len(values)):
+        value = values[i].split('\t')
+        values_new.append(value)
+    if headers is None:                             # Удаляем из масива данных заголовки, если они уже есть
+        del values_new[0]
+    return values_new
 
 
 if __name__ == '__main__':

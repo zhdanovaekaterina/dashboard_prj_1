@@ -13,38 +13,34 @@ def main():
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_direkt)
 
-    # Получение начальной и конечной даты диапазона загрузки данных
-    dates = get_needed_data(worksheet)
-
     # Импорт доступов
     token = config.token_direkt
     client_login = config.client_login
 
-    # Создание тела запроса
-    body = {
-        "params": {
-            "SelectionCriteria": {
-                "DateFrom": dates[0],
-                "DateTo": dates[1]
-            },
-            "FieldNames": [
+    # Получение начальной и конечной даты диапазона загрузки данных
+    dates = get_needed_data(worksheet)
+
+    # Задание необходимых полей для выгрузки
+    field_names = [
                 "Date",
                 "CampaignName",
                 'CampaignId',
                 "Impressions",
                 "Clicks",
                 "Cost"
-            ],
-            "ReportName": "НАЗВАНИЕ_ОТЧЕТА",
-            "ReportType": "CAMPAIGN_PERFORMANCE_REPORT",
-            "DateRangeType": "CUSTOM_DATE",
-            "Format": "TSV",
-            "IncludeVAT": "NO",
-            "IncludeDiscount": "NO"
-        }
-    }
+            ]
 
-    import_direkt_data(token, client_login, body)
+    # Импорт данных из Директа
+    result = import_direkt_data(token, client_login, dates, field_names)
+
+    # Парсим массив данных в список списков для загрузки в Google таблицы
+    if dates[2]:
+        values = parse_direkt_tsv_tolist(result, field_names)
+    else:
+        values = parse_direkt_tsv_tolist(result)
+
+    # Загружаем данные в Google таблицы
+    worksheet.append_rows(values)
 
     end_time = time.time()
     total_time = round((end_time - start_time), 3)
