@@ -42,6 +42,7 @@ def main():
     headers = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign', 'visits', 'users', 'chatMessage',
                'cartOrder']
 
+    # Получаем данные из Метрики
     result = import_metrika_data(api, params)
 
     # Парсим массив данных в список списков для загрузки в Google таблицы

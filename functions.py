@@ -8,6 +8,7 @@ from requests.exceptions import ConnectionError
 from time import sleep
 import csv
 import re
+import pandas as pd
 
 
 def get_needed_data(worksheet):
@@ -47,7 +48,7 @@ def import_metrika_data(api_request, params):
     return result
 
 
-def import_direkt_data(token, client_login, dates: tuple, field_names: list):
+def import_direkt_data(token, dates: tuple, field_names: list, client_login=None):
     """Получает данные из Директа. Возвращает массив данных отчета.
     Params -
     token: токен доступа;
@@ -61,13 +62,14 @@ def import_direkt_data(token, client_login, dates: tuple, field_names: list):
     # Создание HTTP-заголовков запроса
     headers = {
         "Authorization": "Bearer " + token,
-        "Client-Login": client_login,
         "Accept-Language": "ru",
         "processingMode": "offline",
         "returnMoneyInMicros": "false",
         "skipReportHeader": "true",
         "skipReportSummary": "true"
     }
+    if client_login is not None:                            # Добавление логина к заголовкам, если он передан
+        headers['Client-Login'] = client_login
 
     # Создание тела запроса
     body = {
@@ -167,6 +169,13 @@ def parse_metrika_json_tolist(result, headers=None):
             value.append(result[i]["metrics"][m])
         values.append(value)
     return values
+
+
+def group_data(data, headers=None):
+    """Группирует данные по переданным параметрам. Возвращает список списков для загрузки в Google Таблицы."""
+    df = pd.DataFrame(data)
+    df.groupby(['0', '2', '3', '4'], axis=1).sum()
+    print(df)
 
 
 def parse_direkt_tsv_tolist(result, headers=None):
