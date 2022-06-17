@@ -5,7 +5,7 @@ import config
 from functions import *
 
 
-def main():
+def main_direkt():
     start_time = time.time()
 
     # Получение листа Google таблиц для работы
@@ -48,4 +48,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_direkt()

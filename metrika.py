@@ -6,7 +6,7 @@ import config
 from functions import *
 
 
-def main():
+def main_metrika():
     start_time = time.time()
 
     # Импорт токена и счетчика
@@ -60,4 +60,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_metrika()
