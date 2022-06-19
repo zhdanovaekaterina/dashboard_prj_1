@@ -28,7 +28,8 @@ def main_metrika():
 
     params = dict(
         ids=metric_ids,
-        metrics="ym:s:visits,ym:s:users,ym:s:goal49436773reaches,ym:s:goal47702074reaches",
+        metrics="ym:s:visits,ym:s:users,ym:s:goal128195694reaches,ym:s:goal49436773reaches,ym:s:goal47698774reaches,"
+                "ym:s:goal47702074reaches",
         dimensions="ym:s:date,ym:s:lastsignTrafficSource,ym:s:lastsignSourceEngine,ym:s:UTMCampaign",
         date1=dates[0],
         date2=dates[1],
@@ -39,8 +40,8 @@ def main_metrika():
     # Заголовки таблицы - формируются самостоятельно, если импорт данных впервые.
     # Необязательный параметр для функции parse_metrika_json_tolist().
     # Сначала перечисляются dimensions, затем metrics из набора параметров.
-    headers = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign', 'visits', 'users', 'chatMessage',
-               'cartOrder']
+    headers = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign', 'visits', 'users', 'call', 'chatMessage',
+               'anyFormSend', 'cartOrder']
 
     # Получаем данные из Метрики
     result = import_metrika_data(api, params)
