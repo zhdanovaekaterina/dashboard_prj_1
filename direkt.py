@@ -31,7 +31,7 @@ def main_direkt():
             ]
 
     # Импорт данных из Директа
-    result = import_direkt_data(token, client_login, dates, field_names)
+    result = import_direkt_data(token, dates, field_names, client_login)
 
     # Парсим массив данных в список списков для загрузки в Google таблицы
     if dates[2]:
