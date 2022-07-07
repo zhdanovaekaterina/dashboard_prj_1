@@ -1,7 +1,7 @@
 import logging
 import time
 import gspread
-import config
+import config_3 as config
 from functions import *
 
 
@@ -9,7 +9,7 @@ def main_direkt():
     start_time = time.time()
 
     # Получение листа Google таблиц для работы
-    gc = gspread.service_account(filename='google_key.json')
+    gc = gspread.service_account(filename='google_key_3.json')
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_direkt)
 
@@ -24,10 +24,10 @@ def main_direkt():
     field_names = [
                 "Date",
                 "CampaignName",
-                'CampaignId',
+                'Clicks',
+                "Cost",
                 "Impressions",
-                "Clicks",
-                "Cost"
+                "Ctr"
             ]
 
     # Импорт данных из Директа

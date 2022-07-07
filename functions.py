@@ -171,11 +171,43 @@ def parse_metrika_json_tolist(result, headers=None):
     return values
 
 
-def group_data(data, headers=None):
-    """Группирует данные по переданным параметрам. Возвращает список списков для загрузки в Google Таблицы."""
+def group_data(data, headers, col_to_group):
+    """Дополняет данные, если они не полные.
+    Группирует данные по переданным параметрам.
+    Возвращает список списков для загрузки в Google Таблицы."""
+
+    # Заполняем пустые значения в списках предыдущим, для корректной группировки.
+    # Удаляем лишние значения.
+
+    for i in range(len(data)):
+        if data[i][2] == 'Search engine traffic':
+            data[i].pop(4)
+        elif data[i][2] == 'Ad traffic':
+            data[i].pop(3)
+        else:
+            data[i].pop(4)
+            data[i][3] = data[i][2]
+
+        if data[i][3] is None:
+            data[i][3] = data[i][2]
+        if data[i][4] is None:
+            data[i][4] = data[i][3]
+        if data[i][5] is None:
+            data[i][5] = data[i][4]
+
+        # Добавляем 1, если была достигнута хотя бы 1 цель и 0, если ни одной достигнуто не было.
+        if data[i][-3] > 0 or data[i][-2] > 0 or data[i][-1] > 0:
+            data[i].append(1)
+        else:
+            data[i].append(0)
+
     df = pd.DataFrame(data)
-    df.groupby(['0', '2', '3', '4'], axis=1).sum()
-    print(df)
+    df.columns = headers
+    del df['clientID']
+    df = df.groupby(col_to_group).sum().reset_index()
+    df_listed = df.values.tolist()
+
+    return df_listed
 
 
 def parse_direkt_tsv_tolist(result, headers=None):

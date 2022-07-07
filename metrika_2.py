@@ -1,8 +1,8 @@
 from tapi_yandex_metrika import YandexMetrikaStats
+import config_2 as config
 import time
 import logging
 import gspread
-import config
 from functions import *
 
 
@@ -14,46 +14,52 @@ def main_metrika():
     metric_ids = config.counterId
 
     # Получение листа Google таблиц для работы
-    gc = gspread.service_account(filename='google_key.json')
+    gc = gspread.service_account(filename='google_key_2.json')
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_metrika)
 
     # Получение начальной и конечной даты диапазона загрузки данных
     dates = get_needed_data(worksheet)
-    
+
     # Параметры запроса для библиотеки tapi_yandex_metrika
     api = YandexMetrikaStats(
         access_token=access_token,
-        receive_all_data=True)                  # Если True, будет скачивать все части отчета. По умолчанию False.
+        receive_all_data=True)                       # Если True, будет скачивать все части отчета. По умолчанию False.
 
     params = dict(
         ids=metric_ids,
-        metrics="ym:s:visits,ym:s:users,ym:s:goal128195694reaches,ym:s:goal49436773reaches,ym:s:goal47698774reaches,"
-                "ym:s:goal47702074reaches",
-        dimensions="ym:s:date,ym:s:lastsignTrafficSource,ym:s:lastsignSourceEngine,ym:s:UTMCampaign",
+        metrics="ym:s:users,ym:s:goal229705038reaches,ym:s:goal131047114reaches,ym:s:goal35579934reaches",
+        dimensions="ym:s:date,ym:s:clientID,ym:s:lastTrafficSource,ym:s:lastSearchEngine,ym:s:UTMSource,"
+                   "ym:s:UTMCampaign",
         date1=dates[0],
         date2=dates[1],
         sort="ym:s:date",
         accuracy="full",
-        limit=2000)
+        limit=10000)
 
     # Заголовки таблицы - формируются самостоятельно, если импорт данных впервые.
     # Необязательный параметр для функции parse_metrika_json_tolist().
     # Сначала перечисляются dimensions, затем metrics из набора параметров.
-    headers = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign', 'visits', 'users', 'call', 'chatMessage',
-               'anyFormSend', 'cartOrder']
+    headers = ['date', 'clientID', 'trafficSource', 'trafficSearchEngine', 'UTMSource', 'UTMCampaign',
+               'users', 'call', 'email', 'form']
+    headers_2 = ['date', 'clientID', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign',
+               'users', 'call', 'email', 'form', 'anyGoal']
 
     # Получаем данные из Метрики
     result = import_metrika_data(api, params)
 
-    # Парсим массив данных в список списков для загрузки в Google таблицы
+    # Парсит массив данных и возвращает сгруппированный список списков для загрузки в DataFrame и группировки
     if dates[2]:
         values = parse_metrika_json_tolist(result, headers)
     else:
         values = parse_metrika_json_tolist(result)
 
+    # Указываем столбцы для группировки и группируем данные
+    col_to_group = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign']
+    grouped_values = group_data(values, headers_2, col_to_group)
+
     # Загружаем данные в Google таблицы
-    worksheet.append_rows(values)
+    worksheet.append_rows(grouped_values)
     
     end_time = time.time()
     total_time = round((end_time - start_time), 3)

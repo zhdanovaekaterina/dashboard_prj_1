@@ -1,6 +1,7 @@
 venv
-config.py
+config*
 *.xlsx
 __pycache__
-google_key.json
+google_key*
 timing.bat
+logs.log
