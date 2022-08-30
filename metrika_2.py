@@ -4,6 +4,7 @@ import time
 import logging
 import gspread
 from functions import *
+import pprint
 
 
 def main_metrika():
@@ -13,13 +14,18 @@ def main_metrika():
     access_token = config.token
     metric_ids = config.counterId
 
+    # Задаем путь для ключей
+    path = r'C:\Users\nasedkina\Desktop\Docs\Programming\dashboards_connector\keys\google_key_2.json'
+
     # Получение листа Google таблиц для работы
-    gc = gspread.service_account(filename='google_key_2.json')
+    gc = gspread.service_account(filename=path)
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_metrika)
 
     # Получение начальной и конечной даты диапазона загрузки данных
     dates = get_needed_data(worksheet)
+    if dates is None:
+        return None
 
     # Параметры запроса для библиотеки tapi_yandex_metrika
     api = YandexMetrikaStats(
@@ -56,11 +62,14 @@ def main_metrika():
 
     # Указываем столбцы для группировки и группируем данные
     col_to_group = ['date', 'trafficSource', 'trafficSourceEngine', 'UTMCampaign']
-    grouped_values = group_data(values, headers_2, col_to_group)
+    grouped_values = group_data(values, headers_2, col_to_group).values.tolist()
 
     # Загружаем данные в Google таблицы
     worksheet.append_rows(grouped_values)
-    
+
+    # Загружаем данные в Excel
+    # grouped_values.to_excel('metrika_2.xlsx', index=False)
+
     end_time = time.time()
     total_time = round((end_time - start_time), 3)
     logging.info(f'Total time: {total_time} s.')

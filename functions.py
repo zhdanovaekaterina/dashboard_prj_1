@@ -32,12 +32,13 @@ def get_needed_data(worksheet):
     date2 = date.today() - timedelta(days=1)  # вчера
     date_diff = (date2 - date1).days
     if date_diff < 0:
-        sys.exit('Нет новых данных для загрузки. Попробуйте завтра.')
+        print('Нет новых данных для загрузки. Попробуйте завтра.')
+        dates = None
     else:
         date1 = str(date1)
         date2 = str(date2)
         dates = (date1, date2, is_first_data)
-        return dates
+    return dates
 
 
 def import_metrika_data(api_request, params):
@@ -205,9 +206,10 @@ def group_data(data, headers, col_to_group):
     df.columns = headers
     del df['clientID']
     df = df.groupby(col_to_group).sum().reset_index()
-    df_listed = df.values.tolist()
+    # df_listed = df.values.tolist()
 
-    return df_listed
+    # return df_listed
+    return df
 
 
 def parse_direkt_tsv_tolist(result, headers=None):

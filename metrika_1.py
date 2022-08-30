@@ -13,13 +13,18 @@ def main_metrika():
     access_token = config.token
     metric_ids = config.counterId
 
+    # Задаем путь для ключей
+    path = r'C:\Users\nasedkina\Desktop\Docs\Programming\dashboards_connector\keys\google_key_1.json'
+
     # Получение листа Google таблиц для работы
-    gc = gspread.service_account(filename='google_key_1.json')
+    gc = gspread.service_account(filename=path)
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_metrika)
 
     # Получение начальной и конечной даты диапазона загрузки данных
     dates = get_needed_data(worksheet)
+    if dates is None:
+        return None
 
     # Параметры запроса для библиотеки tapi_yandex_metrika
     api = YandexMetrikaStats(
@@ -54,11 +59,11 @@ def main_metrika():
 
     # Загружаем данные в Google таблицы
     worksheet.append_rows(values)
-    
+
     end_time = time.time()
     total_time = round((end_time - start_time), 3)
     logging.info(f'Total time: {total_time} s.')
 
 
 if __name__ == '__main__':
-    main_metrika()
+    pass

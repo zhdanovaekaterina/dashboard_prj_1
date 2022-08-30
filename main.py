@@ -8,3 +8,4 @@ if __name__ == '__main__':
     main_direkt_1()
     main_metrika_2()
     main_direkt_2()
+    pass

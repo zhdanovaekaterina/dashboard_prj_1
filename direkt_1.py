@@ -8,8 +8,11 @@ from functions import *
 def main_direkt():
     start_time = time.time()
 
+    # Задаем путь для ключей
+    path = r'C:\Users\nasedkina\Desktop\Docs\Programming\dashboards_connector\keys\google_key_1.json'
+
     # Получение листа Google таблиц для работы
-    gc = gspread.service_account(filename='google_key_1.json')
+    gc = gspread.service_account(filename=path)
     sheet = gc.open_by_key(config.sheet)
     worksheet = sheet.worksheet(config.worksheet_direkt)
 
@@ -19,6 +22,8 @@ def main_direkt():
 
     # Получение начальной и конечной даты диапазона загрузки данных
     dates = get_needed_data(worksheet)
+    if dates is None:
+        return None
 
     # Задание необходимых полей для выгрузки
     field_names = [
@@ -48,4 +53,4 @@ def main_direkt():
 
 
 if __name__ == '__main__':
-    main_direkt()
+    pass
